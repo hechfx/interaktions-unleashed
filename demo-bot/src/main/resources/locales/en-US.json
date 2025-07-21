@@ -1,0 +1,5 @@
+{
+  "commands.command.ping.name": "ping",
+  "commands.command.ping.description": "ping pong command!! yay :3",
+  "commands.command.ping.options.target.description": "what do you want the bot to say"
+}

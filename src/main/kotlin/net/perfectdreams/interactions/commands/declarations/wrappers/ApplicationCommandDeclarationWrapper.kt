@@ -1,0 +1,3 @@
+package net.perfectdreams.interactions.commands.declarations.wrappers
+
+interface ApplicationCommandDeclarationWrapper
