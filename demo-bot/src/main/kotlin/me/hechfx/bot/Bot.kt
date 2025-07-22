@@ -1,7 +1,6 @@
 package me.hechfx.bot
 
-import dev.minn.jda.ktx.jdabuilder.intents
-import dev.minn.jda.ktx.jdabuilder.light
+import me.hechfx.bot.commands.ComponentsCommand
 import net.dv8tion.jda.api.interactions.DiscordLocale
 import net.dv8tion.jda.api.requests.GatewayIntent
 import me.hechfx.bot.commands.PingCommand
@@ -18,22 +17,31 @@ class Bot(val token: String) {
             .build()
     }
 
-    val commandManager = UnleashedCommandManager(jda, "/locales", true, guildsToRegister = listOf(1251330087211630633))
-        .addSupportForLocale(
-            DiscordLocale.ENGLISH_US,
-            DiscordLocale.PORTUGUESE_BRAZILIAN
-        )
+    val commandManager = UnleashedCommandManager(jda) {
+        prefix = "+"
 
-    fun start() {
-        commandManager.messageListener.setNewMentionMessage {
+        setMentionMessage {
             content = "oi"
         }
 
+        expiredComponentMessage {
+            content = "expired component! please use the command again."
+        }
+
+        supportLocales(DiscordLocale.PORTUGUESE_BRAZILIAN, DiscordLocale.ENGLISH_US)
+
+        enableLocale("/locales")
+
+        forGuild(1251330087211630633)
+    }
+
+    fun start() {
         commandManager.messageListener.modules.add(MessageReceivedDiscordLinkModule())
         commandManager.messageListener.modules.add(MessageUpdateDiscordLinkModule())
 
         commandManager.register(PingCommand())
         commandManager.register(PongCommand())
+        commandManager.register(ComponentsCommand())
 
         jda.awaitReady()
     }

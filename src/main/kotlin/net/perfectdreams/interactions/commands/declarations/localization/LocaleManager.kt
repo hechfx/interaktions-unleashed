@@ -16,7 +16,7 @@ class LocaleManager(var path: String, val manager: UnleashedCommandManager) {
     }
 
     fun getAll(key: LocalizedString): Map<DiscordLocale, String> {
-        return manager.supportedLocales.associateWith { get(it, key) }
+        return manager.options.supportedLocales.associateWith { get(it, key) }
     }
 
     private fun loadLocale(locale: DiscordLocale): Map<String, String> {

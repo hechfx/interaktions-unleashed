@@ -2,6 +2,8 @@ package net.perfectdreams.interactions
 
 import dev.minn.jda.ktx.messages.InlineMessage
 import net.dv8tion.jda.api.JDA
+import net.dv8tion.jda.api.components.actionrow.ActionRow
+import net.dv8tion.jda.api.components.actionrow.ActionRowChildComponent
 import net.dv8tion.jda.api.entities.Guild
 import net.dv8tion.jda.api.entities.Member
 import net.dv8tion.jda.api.entities.User
@@ -10,11 +12,13 @@ import net.dv8tion.jda.api.interactions.DiscordLocale
 import net.dv8tion.jda.api.interactions.Interaction
 import net.dv8tion.jda.api.utils.messages.MessageCreateData
 import net.perfectdreams.interactions.commands.exceptions.CommandException
+import net.perfectdreams.interactions.utils.ActionRowBuilder
 import net.perfectdreams.interactions.utils.ComponentV2MessageBuilder
 
 abstract class UnleashedContext(
     val discordGuildLocale: DiscordLocale?,
     val discordUserLocale: DiscordLocale,
+    val manager: UnleashedCommandManager,
     val jda: JDA,
     val mentions: UnleashedMentions,
     val user: User,
@@ -40,6 +44,14 @@ abstract class UnleashedContext(
 
     val discordInteraction: Interaction
         get() = discordInteractionOrNull ?: error("This is not executed by an interaction!")
+
+    val actionRows = mutableListOf<ActionRow>()
+
+    fun actionRow(builder: ActionRowBuilder.() -> Unit) {
+        val b = ActionRowBuilder(manager).apply(builder).build()
+
+        actionRows.add(b)
+    }
 
     abstract suspend fun deferChannelMessage(ephemeral: Boolean): UnleashedHook
 

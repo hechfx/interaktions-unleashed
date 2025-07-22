@@ -9,6 +9,7 @@ import net.dv8tion.jda.api.events.message.MessageReceivedEvent
 import net.dv8tion.jda.api.interactions.DiscordLocale
 import net.dv8tion.jda.api.utils.messages.MessageCreateData
 import net.perfectdreams.interactions.InteractionMessage
+import net.perfectdreams.interactions.UnleashedCommandManager
 import net.perfectdreams.interactions.UnleashedContext
 import net.perfectdreams.interactions.UnleashedHook
 import net.perfectdreams.interactions.UnleashedMentions
@@ -32,7 +33,8 @@ class LegacyMessageCommandContext(
     val event: MessageListener.MessageEvent,
     val args: List<String>,
     override val rootDeclaration: SlashCommandDeclaration,
-    override val commandDeclaration: SlashCommandDeclaration
+    override val commandDeclaration: SlashCommandDeclaration,
+    manager: UnleashedCommandManager
 ) : UnleashedContext(
     discordGuildLocale = guildLocale,
     discordUserLocale = userLocale,
@@ -47,7 +49,8 @@ class LegacyMessageCommandContext(
     memberOrNull = event.member,
     guildOrNull = event.guild,
     channelOrNull = event.channel,
-    null
+    manager = manager,
+    discordInteractionOrNull = null
 ), CommandContext {
     override suspend fun deferChannelMessage(ephemeral: Boolean): UnleashedHook.LegacyMessageHook {
         // Message commands do not have deferring like slash commands...

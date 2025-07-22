@@ -6,21 +6,19 @@ plugins {
 
 repositories {
     mavenCentral()
-    maven("https://m2.dv8tion.net/releases")
     maven("https://repo.perfectdreams.net/")
+    maven("https://jitpack.io")
 }
 
 dependencies {
-    implementation(libs.jda)
-    implementation(libs.jda.ktx)
+    api(libs.jda)
+    api(libs.jda.ktx)
+
+    api(libs.harmony.logging)
+    api(libs.logback.classic)
 
     implementation(libs.caffeine)
-
     implementation(libs.kotlinx.serialization.json)
-
-    implementation(libs.harmony.logging)
-    implementation(libs.logback.classic)
-
     implementation(libs.google.guava)
 }
 
@@ -35,7 +33,7 @@ publishing {
 
             groupId = "me.hechfx"
             artifactId = "interaktions-unleashed"
-            version = "1.0.0"
+            version = "1.0.1"
         }
     }
 

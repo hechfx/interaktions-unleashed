@@ -4,6 +4,8 @@ import net.dv8tion.jda.api.components.ActionComponent
 import net.dv8tion.jda.api.components.textinput.TextInput
 import net.dv8tion.jda.api.components.textinput.TextInputStyle
 import net.dv8tion.jda.api.interactions.modals.ModalMapping
+import net.perfectdreams.interactions.commands.declarations.localization.LocalizedString
+import net.perfectdreams.interactions.utils.ModalInputs
 import java.util.UUID
 
 sealed class ModalOptionReference<T>
@@ -16,7 +18,7 @@ sealed class DiscordModalOptionReference<T>(
 
     abstract fun get(option: ModalMapping): T
 
-    abstract fun toJDA(): ActionComponent
+    abstract fun unleash(): ModalInputs
 }
 
 class StringDiscordModalOptionReference<T>(
@@ -40,24 +42,20 @@ class StringDiscordModalOptionReference<T>(
         return value as T
     }
 
-    override fun toJDA() = TextInput.create(
+    override fun unleash() = ModalInputs.TextInput(
         name,
         label,
-        style
-    ).setValue(value)
-        .setPlaceholder(placeholder)
-        .setRequired(required)
-        .apply {
-            if (range != null) {
-                setMinLength(range.first)
-                setMaxLength(range.last)
-            }
-        }
-        .build()
+        style,
+        required,
+        value,
+        placeholder,
+        range
+    )
 }
 
 // ===[ BUILDERS ]===
-fun modalString(label: String, style: TextInputStyle, value: String? = null, placeholder: String? = null, range: IntRange? = null) = StringDiscordModalOptionReference<String>(
+fun modalString(label: String, style: TextInputStyle, value: String? = null, placeholder: String? = null, range: IntRange? = null) =
+    StringDiscordModalOptionReference<String>(
     label,
     style,
     value,

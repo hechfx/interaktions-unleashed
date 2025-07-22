@@ -137,7 +137,7 @@ class InteractivityManager(invalidationDelay: Duration = 5.minutes) {
         val buttonId = UUID.randomUUID()
         buttonInteractionCallbacks[buttonId] = ButtonInteractionCallback(callbackAlwaysEphemeral, callback)
         return button
-            .withId(UnleashedComponentId(buttonId).toString())
+            .withCustomId(UnleashedComponentId(buttonId).toString())
     }
 
     /**

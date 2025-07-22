@@ -1,7 +1,5 @@
 package net.perfectdreams.interactions.events
 
-import dev.minn.jda.ktx.messages.InlineMessage
-import dev.minn.jda.ktx.messages.MessageCreate
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import net.dv8tion.jda.api.JDA
@@ -17,7 +15,6 @@ import net.dv8tion.jda.api.events.message.GenericMessageEvent
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent
 import net.dv8tion.jda.api.events.message.MessageUpdateEvent
 import net.dv8tion.jda.api.hooks.ListenerAdapter
-import net.dv8tion.jda.api.utils.messages.MessageCreateData
 import net.perfectdreams.harmony.logging.HarmonyLoggerFactory
 import net.perfectdreams.interactions.UnleashedCommandManager
 import net.perfectdreams.interactions.commands.exceptions.SimpleCommandException
@@ -32,18 +29,6 @@ class MessageListener(val manager: UnleashedCommandManager, var prefix: String? 
 
     val modules = mutableListOf<MessageModule<out GenericMessageEvent>>()
     val unavailableMessages = mutableListOf<Long>()
-
-    var mentionMessage: MessageCreateData? = null
-
-    fun setNewMentionMessage(block: InlineMessage<*>.() -> Unit): MessageListener {
-        val builtMessage = MessageCreate {
-            block()
-        }
-
-        mentionMessage = builtMessage
-
-        return this
-    }
 
     init {
         manager.jda.addEventListener(this)
@@ -75,8 +60,8 @@ class MessageListener(val manager: UnleashedCommandManager, var prefix: String? 
                     }
 
                     if (isMentioningOnlyMe(event.message.contentRaw)) {
-                        if (event.channel.canTalk() && mentionMessage != null) {
-                            event.channel.sendMessage(mentionMessage!!).queue()
+                        if (event.channel.canTalk() && manager.options.mentionMessage != null) {
+                            event.channel.sendMessage(manager.options.mentionMessage).queue()
                         }
                     }
                 }
@@ -94,6 +79,8 @@ class MessageListener(val manager: UnleashedCommandManager, var prefix: String? 
 
                 if (checkCommandsAndDispatch(e))
                     return@launchMessageJob
+            } catch (e: SimpleCommandException) {
+                logger.error(e) { e.reason }
             } catch (e: Exception) {
                 logger.error(e) { "[${event.guild.id}] Error while processing message of ${event.author.name} (${event.author.id} - ${event.message.contentRaw})" }
             }

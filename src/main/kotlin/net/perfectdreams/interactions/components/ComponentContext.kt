@@ -8,23 +8,28 @@ import dev.minn.jda.ktx.messages.MessageEditBuilder
 import net.dv8tion.jda.api.components.Component
 import net.dv8tion.jda.api.components.MessageTopLevelComponent
 import net.dv8tion.jda.api.components.actionrow.ActionRow
+import net.dv8tion.jda.api.components.actionrow.ActionRowChildComponent
+import net.dv8tion.jda.api.components.textinput.TextInput
+import net.dv8tion.jda.api.components.textinput.TextInputStyle
 import net.dv8tion.jda.api.entities.Message
 import net.dv8tion.jda.api.interactions.InteractionHook
 import net.dv8tion.jda.api.interactions.components.ComponentInteraction
 import net.dv8tion.jda.api.utils.messages.MessageEditData
 import net.perfectdreams.interactions.InteractionContext
 import net.perfectdreams.interactions.InteractivityManager
+import net.perfectdreams.interactions.UnleashedCommandManager
 import net.perfectdreams.interactions.UnleashedHook
 import net.perfectdreams.interactions.UnleashedMentions
 import net.perfectdreams.interactions.modals.ModalArguments
 import net.perfectdreams.interactions.modals.ModalContext
+import net.perfectdreams.interactions.utils.ModalInputs
 import java.util.UUID
 import java.util.concurrent.CompletableFuture
 
 class ComponentContext(
     val event: ComponentInteraction,
-    val interactivityManager: InteractivityManager
-) : InteractionContext(UnleashedMentions(emptyList(), emptyList(), emptyList(), emptyList()), event) {
+    manager: UnleashedCommandManager
+) : InteractionContext(UnleashedMentions(emptyList(), emptyList(), emptyList(), emptyList()), manager, event) {
     suspend fun deferEdit(): InteractionHook = event.deferEdit().await()
 
     suspend fun deferEditAsync(): CompletableFuture<InteractionHook> = event.deferEdit().submit()
@@ -85,10 +90,10 @@ class ComponentContext(
             Component.Type.UNKNOWN -> TODO()
             Component.Type.ACTION_ROW -> TODO()
             Component.Type.BUTTON -> {
-                interactivityManager.buttonInteractionCallbacks.remove(componentId.uniqueId)
+                manager.interactivityManager.buttonInteractionCallbacks.remove(componentId.uniqueId)
             }
             Component.Type.STRING_SELECT -> {
-                interactivityManager.selectMenuInteractionCallbacks.remove(componentId.uniqueId)
+                manager.interactivityManager.selectMenuInteractionCallbacks.remove(componentId.uniqueId)
             }
             Component.Type.TEXT_INPUT -> TODO()
             Component.Type.USER_SELECT -> TODO()
@@ -107,18 +112,43 @@ class ComponentContext(
 
     suspend fun sendModal(
         title: String,
-        components: List<MessageTopLevelComponent>,
+        components: List<ModalInputs>,
         callback: suspend (ModalContext, ModalArguments) -> (Unit)
     ) {
         val unleashedComponentId = UnleashedComponentId(UUID.randomUUID())
-        interactivityManager.modalCallbacks[unleashedComponentId.uniqueId] = InteractivityManager.ModalInteractionCallback(this.alwaysEphemeral, callback)
+        manager.interactivityManager.modalCallbacks[unleashedComponentId.uniqueId] = InteractivityManager.ModalInteractionCallback(this.alwaysEphemeral, callback)
 
         val modal = ModalBuilder(unleashedComponentId.toString(), title).apply {
             components.forEach {
-                components.plus(it)
+                if (it is ModalInputs.TextInput) {
+                    when (it.style) {
+                        TextInputStyle.PARAGRAPH -> paragraph(
+                            it.id,
+                            it.label,
+                            null,
+                            it.required,
+                            it.value,
+                            it.placeholder,
+                            it.requiredLength
+                        )
+
+                        TextInputStyle.SHORT -> short(
+                            it.id,
+                            it.label,
+                            null,
+                            it.required,
+                            it.value,
+                            it.placeholder,
+                            it.requiredLength
+                        )
+
+                        TextInputStyle.UNKNOWN -> null
+                    }
+                }
             }
         }.build()
 
-        event.replyModal(modal).await()
+        event.replyModal(modal)
+            .await()
     }
 }

@@ -11,10 +11,12 @@ import java.util.EnumSet
 
 abstract class InteractionContext(
     mentions: UnleashedMentions,
+    manager: UnleashedCommandManager,
     private val replyCallback: IReplyCallback
 ) : UnleashedContext(
     if (replyCallback.isFromGuild) replyCallback.guildLocale else null,
     replyCallback.userLocale,
+    manager,
     replyCallback.jda,
     mentions,
     replyCallback.user,
@@ -48,10 +50,16 @@ abstract class InteractionContext(
         // We could actually disable the components when their state expires, however this is hard to track due to "@original" or ephemeral messages not having an ID associated with it
         // So, if the message is edited, we don't know if we *can* disable the components when their state expires!
         return if (replyCallback.isAcknowledged) {
-            val message = replyCallback.hook.sendMessage(createdMessage).setEphemeral(realEphemeralState).await()
+            val message = replyCallback.hook.sendMessage(createdMessage)
+                .addComponents(actionRows)
+                .setEphemeral(realEphemeralState)
+                .await()
             InteractionMessage.FollowUpInteractionMessage(message)
         } else {
-            val hook = replyCallback.reply(createdMessage).setEphemeral(realEphemeralState).await()
+            val hook = replyCallback.reply(createdMessage)
+                .addComponents(actionRows)
+                .setEphemeral(realEphemeralState)
+                .await()
             wasInitiallyDeferredEphemerally = realEphemeralState
             InteractionMessage.InitialInteractionMessage(hook)
         }
@@ -67,13 +75,12 @@ abstract class InteractionContext(
             componentBuilder()
         }.childs
 
-        println(components)
-
         // We could actually disable the components when their state expires, however this is hard to track due to "@original" or ephemeral messages not having an ID associated with it
         // So, if the message is edited, we don't know if we *can* disable the components when their state expires!
         return if (replyCallback.isAcknowledged) {
             val message = replyCallback.hook.sendMessage("")
                 .setEphemeral(realEphemeralState)
+                .addComponents(actionRows)
                 .useComponentsV2()
                 .setComponents(components)
                 .await()
@@ -81,6 +88,7 @@ abstract class InteractionContext(
         } else {
             val hook = replyCallback.reply("")
                 .setEphemeral(realEphemeralState)
+                .addComponents(actionRows)
                 .useComponentsV2()
                 .setComponents(components)
                 .await()

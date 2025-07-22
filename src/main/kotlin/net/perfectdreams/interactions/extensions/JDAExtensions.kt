@@ -1,6 +1,10 @@
 package net.perfectdreams.interactions.extensions
 
+import dev.minn.jda.ktx.messages.InlineMessage
 import net.dv8tion.jda.api.Permission
+import net.dv8tion.jda.api.components.ActionComponent
+import net.dv8tion.jda.api.components.actionrow.ActionRow
+import net.dv8tion.jda.api.components.actionrow.ActionRowChildComponent
 import net.dv8tion.jda.api.entities.Guild
 import net.dv8tion.jda.api.entities.Message
 import net.dv8tion.jda.api.entities.channel.middleman.GuildChannel

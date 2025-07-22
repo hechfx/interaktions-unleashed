@@ -6,8 +6,6 @@ import dev.minn.jda.ktx.interactions.commands.choice
 import dev.minn.jda.ktx.interactions.commands.group
 import dev.minn.jda.ktx.interactions.commands.subcommand
 import dev.minn.jda.ktx.interactions.commands.updateCommands
-import dev.minn.jda.ktx.messages.InlineMessage
-import dev.minn.jda.ktx.messages.MessageCreate
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import net.dv8tion.jda.api.JDA
@@ -21,9 +19,9 @@ import net.dv8tion.jda.api.hooks.ListenerAdapter
 import net.dv8tion.jda.api.interactions.DiscordLocale
 import net.dv8tion.jda.api.interactions.commands.Command
 import net.dv8tion.jda.api.interactions.commands.build.*
-import net.dv8tion.jda.api.utils.messages.MessageCreateData
 import net.perfectdreams.harmony.logging.HarmonyLoggerFactory
 import net.perfectdreams.harmony.logging.slf4j.HarmonyLoggerCreatorSLF4J
+import net.perfectdreams.interactions.builders.UnleashedCommandManagerConfigurationBuilder
 import net.perfectdreams.interactions.commands.*
 import net.perfectdreams.interactions.commands.context.LegacyMessageCommandContext
 import net.perfectdreams.interactions.commands.declarations.*
@@ -39,7 +37,7 @@ import java.util.Locale
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.toJavaDuration
 
-class UnleashedCommandManager(val jda: JDA, localePath: String, val registerGlobally: Boolean = false, val guildsToRegister: List<Long>): ListenerAdapter() {
+class UnleashedCommandManager(val jda: JDA, optionsBuilder: UnleashedCommandManagerConfigurationBuilder.() -> Unit): ListenerAdapter() {
     companion object {
         init {
             HarmonyLoggerFactory.setLoggerCreator(HarmonyLoggerCreatorSLF4J())
@@ -68,27 +66,11 @@ class UnleashedCommandManager(val jda: JDA, localePath: String, val registerGlob
     val applicationCommands: List<ExecutableApplicationCommandDeclaration>
         get() = slashCommands + userCommands + messageCommands
 
-    val supportedLocales = mutableSetOf<DiscordLocale>()
-    var mentionMessage: MessageCreateData? = null
-    var prefix: String? = "+"
+    val options = UnleashedCommandManagerConfigurationBuilder().apply(optionsBuilder).build()
 
-    fun addSupportForLocale(vararg locale: DiscordLocale): UnleashedCommandManager {
-        supportedLocales.addAll(locale)
+    val interactivityManager = InteractivityManager()
 
-        return this
-    }
-
-    fun setPrefix(prefix: String): UnleashedCommandManager {
-        this.prefix = prefix
-
-        return this
-    }
-
-    val messageListener = MessageListener(this, prefix)
-
-    fun injectCustomPrefix(prefix: String) {
-        messageListener.prefix = prefix
-    }
+    val messageListener = MessageListener(this, options.prefix)
 
     private var slashCommandPathToDeclarations = mutableMapOf<String, CommandDeclarationPair>()
     private var userCommandPathToDeclarations = mutableMapOf<String, UserCommandDeclaration>()
@@ -100,7 +82,7 @@ class UnleashedCommandManager(val jda: JDA, localePath: String, val registerGlob
     private var hasAlreadyUpdatedTheEmojis = false
 
     init {
-        localeManager = LocaleManager(localePath, this)
+        localeManager = LocaleManager(options.localePath, this)
 
         InteractionsListener(this)
 
@@ -109,7 +91,7 @@ class UnleashedCommandManager(val jda: JDA, localePath: String, val registerGlob
 
     override fun onReady(event: ReadyEvent) {
         GlobalScope.launch {
-            if (registerGlobally && !hasAlreadyGloballyUpdatedTheCommands) {
+            if (options.registerCommandGlobally && !hasAlreadyGloballyUpdatedTheCommands) {
                 hasAlreadyGloballyUpdatedTheCommands = true
 
                 val registeredCommands = updateCommands(
@@ -126,7 +108,7 @@ class UnleashedCommandManager(val jda: JDA, localePath: String, val registerGlob
 
                 logger.info { "Successfully converted ${registeredCommands.size} registered commands into command mentions!" }
             } else {
-                jda.guilds.filter { it.idLong in guildsToRegister }
+                jda.guilds.filter { it.idLong in options.guildsToRegisterCommands }
                     .forEach {
                         val registeredCommands = updateCommands(
                             it.idLong
@@ -389,7 +371,8 @@ class UnleashedCommandManager(val jda: JDA, localePath: String, val registerGlob
                 event,
                 rawArgumentsAfterDrop,
                 rootDeclaration,
-                slashDeclaration
+                slashDeclaration,
+                this
             )
 
             val guild = context.guildOrNull
@@ -445,6 +428,8 @@ class UnleashedCommandManager(val jda: JDA, localePath: String, val registerGlob
             }
         } catch (e: CommandException) {
             context?.reply(e.ephemeral, e.builder)
+        } catch (e: SimpleCommandException) {
+            logger.error(e) { e.reason }
         }
 
         return true
