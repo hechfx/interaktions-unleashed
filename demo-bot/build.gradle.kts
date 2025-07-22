@@ -11,7 +11,7 @@ repositories {
 }
 
 dependencies {
-    implementation(project(":"))
+    implementation("me.hechfx:interaktions-unleashed:1.0.1")
 }
 
 kotlin {
